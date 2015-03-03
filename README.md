@@ -1,3 +1,25 @@
+#FORK:
+
+This is a fork of PyMiProxy. It allows the following situation:
+
+browser <---https---> ClientMitmProxy <---http---> ServerMitmProxy <---https---> Internet
+
+To run the ClientMitmProxy:
+```bash
+cd src/pyproxy/
+python chain_proxy.py c
+```
+
+To run the ServerMitmProxy:
+```bash
+cd src/pyproxy/
+python chain_proxy.py s
+```
+
+Currently the ports are all hard coded. The client sits at http://localhost:8080 and the server is at http://localhost:8081.
+
+PyMiProxy README.md to follow:
+
 #pymiproxy - Python Micro Interceptor Proxy
 
 A small and sweet man-in-the-middle proxy capable of doing HTTP and HTTP over SSL.
