@@ -15,8 +15,8 @@ setup(
     download_url='https://github.com/allfro/pymiproxy/zipball/master',
     long_description=read('README.md'),
     packages=find_packages('src'),
-    package_dir={ '' : 'src' },
-    install_requires = [
-        'pyopenssl'
-    ]
+    package_dir={ '' : 'src' }#,
+    #install_requires = [
+    #    'pyopenssl'
+    #]
 )
