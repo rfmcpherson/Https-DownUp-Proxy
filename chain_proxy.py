@@ -149,8 +149,7 @@ def _main():
   # launch client
   if argv[1].lower() == "c" or argv[1].lower() == "client":
     proxy = AsyncMitmProxy(RequestHandlerClass=ClientMitmProxyHandler, server_address=('localhost',8080))
-    proxy.register_interceptor(SaveDebugInterceptor)
-
+    
   # launch server
   elif argv[1].lower() == "s" or argv[1].lower() == "server":
     proxy = AsyncMitmProxy(RequestHandlerClass=ServerMitmProxyHandler, server_address=('localhost',8081))
