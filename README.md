@@ -18,7 +18,7 @@ python chain_proxy.py s
 
 Currently the ports are all hard coded. The client sits at http://localhost:8080 and the server is at http://localhost:8081.
 
-PyMiProxy README.md to follow:
+PyMiProxy old README.md follows:
 
 #pymiproxy - Python Micro Interceptor Proxy
 
