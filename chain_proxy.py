@@ -5,6 +5,7 @@
 
 from ssl import wrap_socket
 from socket import socket
+from urlparse import urlparse, urlunparse, ParseResult
 
 from proxy import *
 
