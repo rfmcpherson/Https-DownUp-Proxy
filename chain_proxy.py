@@ -1,6 +1,6 @@
 # Extension to PyMiProxy
 # by Richard McPherson
-# based on code by Nadeem Douba 
+# heavily based on and includes code by Nadeem Douba 
 # GPL
 
 from ssl import wrap_socket
