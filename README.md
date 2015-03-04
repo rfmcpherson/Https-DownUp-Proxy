@@ -6,13 +6,11 @@ browser <---https---> ClientMitmProxy <---http---> ServerMitmProxy <---https--->
 
 To run the ClientMitmProxy:
 ```bash
-cd src/pyproxy/
 python chain_proxy.py c
 ```
 
 To run the ServerMitmProxy:
 ```bash
-cd src/pyproxy/
 python chain_proxy.py s
 ```
 
