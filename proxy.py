@@ -287,8 +287,8 @@ class MitmProxy(HTTPServer):
         if issubclass(interceptor_class, ResponseInterceptorPlugin):
             self._res_plugins.append(interceptor_class)
 
-
 class AsyncMitmProxy(ThreadingMixIn, MitmProxy):
+    daemon_threads = True
     pass
 
 
