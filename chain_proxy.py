@@ -152,7 +152,7 @@ class ChainedMitmProxyHandler(ProxyHandler):
     res += h.read()
 
     # Relay the message
-    self.request.sendall("HTTP/1.1 500 OK\r\n\r\n")#self.mitm_response(res))
+    self.request.sendall(self.mitm_response(res))
 
     # Let's close off the remote end
     if close:
