@@ -5,7 +5,7 @@
 
 from httplib import HTTPResponse, BadStatusLine
 from ssl import wrap_socket
-from socket import socket
+from socket import socket, SHUT_RDWR
 from urlparse import urlparse, urlunparse, ParseResult
 
 from proxy import *
@@ -94,11 +94,14 @@ class ChainedMitmProxyHandler(ProxyHandler):
       
     return req
 
+  def do_CLOSE(self):
+    print "IT WORKED!"
 
   def do_COMMAND(self):
+    import select
     print self.protocol_version
 
-    #close = False
+    close = False
 
     # Is this an SSL tunnel?
     if not self.is_connect:
@@ -114,14 +117,14 @@ class ChainedMitmProxyHandler(ProxyHandler):
     req = self._get_request(connect=False)
     
     # Check if last request
-    #if "Connection" in self.headers and self.headers['Connection'] == "close":
-    #  close = True
-    #  print "client close"
-    self.headers['Connection'] = "close"
-
+    if "Connection" in self.headers and self.headers['Connection'] == "close":
+      close = True
+      print "client close"
+    #self.headers['Connection'] = "close"
 
     # Send it down the pipe!
     self._proxy_sock.sendall(self.mitm_request(req))
+
 
     # Parse response
     try:
@@ -129,15 +132,16 @@ class ChainedMitmProxyHandler(ProxyHandler):
       h.begin()
     except BadStatusLine:
       print "BadStatusLine, closing"
+      self.request.shutdown(SHUT_RDWR)
+      self.request.close()
       h.close()
-      self._proxy_sock.close()
       return
 
     # Check if last response
-    #if "Connection" in h.msg and h.msg['Connection'] == "close":
-    #  close = True
-    #  print "server close"
-    h.msg['Connection'] = "close"
+    if "Connection" in h.msg and h.msg['Connection'] == "close":
+      close = True
+      print "server close"
+    #h.msg['Connection'] = "close"
 
     # Get rid of the pesky header
     del h.msg['Transfer-Encoding']
@@ -148,17 +152,18 @@ class ChainedMitmProxyHandler(ProxyHandler):
     res += h.read()
 
     # Relay the message
-    self.request.sendall(self.mitm_response(res))
+    self.request.sendall("HTTP/1.1 500 OK\r\n\r\n")#self.mitm_response(res))
 
     # Let's close off the remote end
-    #if close:
-    print "closing"
-    h.close()
-    self._proxy_sock.close()
-    print "closed"
+    if close:
+      print "closing"
+      h.close()
+      self.request.shutdown(SHUT_RDWR)
+      self.request.close()
+      print "closed"
 
-    #if not close:
-    #  self.handle_one_request()
+    if not close:
+      self.handle_one_request()
 
   def do_CONNECT(self):
     self.is_connect = True
