@@ -3,7 +3,7 @@
 # heavily based on and includes code by Nadeem Douba 
 # GPL
 
-from httplib import HTTPResponse
+from httplib import HTTPResponse, BadStatusLine
 from ssl import wrap_socket
 from socket import socket
 from urlparse import urlparse, urlunparse, ParseResult
@@ -114,7 +114,7 @@ class ChainedMitmProxyHandler(ProxyHandler):
     req = self._get_request(connect=False)
     
     # Check if last request
-    if self.headers['Connection'] == "close":
+    if "Connection" in self.headers and self.headers['Connection'] == "close":
       close = True
       print "client close"
 
@@ -122,8 +122,14 @@ class ChainedMitmProxyHandler(ProxyHandler):
     self._proxy_sock.sendall(self.mitm_request(req))
 
     # Parse response
-    h = HTTPResponse(self._proxy_sock)
-    h.begin()
+    try:
+      h = HTTPResponse(self._proxy_sock)
+      h.begin()
+    except BadStatusLine:
+      print "BadStatusLine, closing"
+      h.close()
+      self._proxy_sock.close()
+      return
 
     # Check if last response
     if "Connection" in h.msg and h.msg['Connection'] == "close":
