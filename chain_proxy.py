@@ -36,7 +36,7 @@ class ChainedMitmProxyHandler(ProxyHandler):
 
     # Connect to destination
     self._proxy_sock = socket()
-    self._proxy_sock.settimeout(10)
+    #self._proxy_sock.settimeout(10)
 
     # connect to next proxy or endpoint
     if self.proxy_address:
@@ -81,7 +81,7 @@ class ChainedMitmProxyHandler(ProxyHandler):
   # return request
   def _get_request(self, connect=False):
     if connect:
-      req = "{} {}:{} {}\r\n".format(self.command, self.hostname, self.port, self.request_version)
+      req = "CONNECT {}:{} {}\r\n".format(self.hostname, self.port, self.request_version)
     else:
       req = "{} {} {}\r\n".format(self.command, self.path, self.request_version)
 
@@ -134,7 +134,8 @@ class ChainedMitmProxyHandler(ProxyHandler):
       print "BadStatusLine, closing"
       self.request.shutdown(SHUT_RDWR)
       self.request.close()
-      h.close()
+      self._proxy_sock.shutdown(SHUT_RDWR)
+      self._proxy_sock.close()
       return
 
     # Check if last response
@@ -157,20 +158,22 @@ class ChainedMitmProxyHandler(ProxyHandler):
     # Let's close off the remote end
     #if close:
     print "closing"
-    h.close()
     self.request.shutdown(SHUT_RDWR)
     self.request.close()
+    if not self.proxy_address:
+      self._proxy_sock.shutdown(SHUT_RDWR)
+      self._proxy_sock.close()
     print "closed"
 
     #if not close:
     #  self.handle_one_request()
 
   def do_CONNECT(self):
-    self.is_connect = True
+    self.is_connect = False
     try:
       # Connect to destination first
       self._get_address()
-      self._connect_to_host()
+      #self._connect_to_host()
 
       # If successful, let's do this!
       if self.ssl_prev:
@@ -234,6 +237,18 @@ class SaveDebugInterceptor(RequestInterceptorPlugin, ResponseInterceptorPlugin):
       f.write(data)
     return data
 
+class DelayInterceptor(RequestInterceptorPlugin, ResponseInterceptorPlugin):
+  def do_request(self, data):
+    import time
+    print data
+    time.sleep(15)
+    print data
+    return data
+  def do_response(self, data):
+    import time
+    time.sleep(50)
+    return data
+
 
 def _main():
   from sys import argv
@@ -249,29 +264,27 @@ def _main():
     proxy = AsyncMitmProxy(
       RequestHandlerClass=ClientMitmProxyHandler, 
       server_address=('localhost',8080))
+    proxy.register_interceptor(FirstLineInterceptor)
+    #proxy.register_interceptor(DelayInterceptor)
     
   # launch server
   elif argv[1].lower() == "s" or argv[1].lower() == "server":
     proxy = AsyncMitmProxy(
       RequestHandlerClass=ServerMitmProxyHandler, 
       server_address=('localhost',8081))
+    proxy.register_interceptor(FirstLineInterceptor)
 
   # launch 'test'
   elif argv[1].lower() == "t" or argv[1].lower() == "test":
     proxy = AsyncMitmProxy(
       RequestHandlerClass=TestMitmProxyHandler, 
       server_address=('localhost',8080))
+    proxy.register_interceptor(FirstLineInterceptor)
 
   # launch... none
   else:
     print "Bad argument. Expect [c/s/t]"
 
-  # add interceptor and run
-  proxy.register_interceptor(FirstLineInterceptor)
-
-  #proxy.run_proxy()
-
-  
   try:
     proxy.serve_forever()
   except KeyboardInterrupt:
