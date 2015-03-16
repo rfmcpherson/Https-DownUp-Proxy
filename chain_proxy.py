@@ -34,30 +34,26 @@ class ChainedMitmProxyHandler(ProxyHandler):
     if not self.is_connect:
       self._get_address()
 
-    print "1"
     # Connect to destination
     self._proxy_sock = socket()
     #self._proxy_sock.settimeout(10)
 
-    print "2"
     # connect to next proxy or endpoint
     if self.proxy_address:
       self._proxy_sock.connect(self.proxy_address)
     else:
       self._proxy_sock.connect((self.hostname, self.port))
 
-    print "3"
     # wrap socket in ssl if needed
     if self.is_connect and self.ssl_next:
         self._proxy_sock = wrap_socket(self._proxy_sock, server_side=False)
 
-    print "4"
     # send CONNECT request if chained
     if self.is_connect and self.proxy_address:
       req = self._get_request(connect=True)
       print req
       self._proxy_sock.sendall(self.mitm_request(req))
-    print "5"
+
 
   # get hostname and port
   # reset self.path as needed
@@ -118,10 +114,8 @@ class ChainedMitmProxyHandler(ProxyHandler):
       return
       # Extract path
 
-    print "build"
     # Build request
     req = self._get_request(connect=False)
-    print "built"
 
     # Check if last request
     #if "Connection" in self.headers and self.headers['Connection'] == "close":
@@ -167,21 +161,17 @@ class ChainedMitmProxyHandler(ProxyHandler):
 
     # Let's close off the remote end
     #if close:
-    print "closing"
     self.request.shutdown(SHUT_RDWR)
     self.request.close()
     if not self.proxy_address:
       self._proxy_sock.shutdown(SHUT_RDWR)
       self._proxy_sock.close()
-    print "closed"
 
     #if not close:
     #  self.handle_one_request()
 
   def do_CONNECT(self):
     import select
-
-    print "CONNECT"
 
     self.is_connect = True
     try:
@@ -284,7 +274,7 @@ def _main():
       RequestHandlerClass=ClientMitmProxyHandler, 
       server_address=('localhost',8080))
     proxy.register_interceptor(FirstLineInterceptor)
-    proxy.register_interceptor(DelayInterceptor)
+    #proxy.register_interceptor(DelayInterceptor)
     
   # launch server
   elif argv[1].lower() == "s" or argv[1].lower() == "server":
