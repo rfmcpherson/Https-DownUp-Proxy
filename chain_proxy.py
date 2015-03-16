@@ -51,7 +51,6 @@ class ChainedMitmProxyHandler(ProxyHandler):
     # send CONNECT request if chained
     if self.is_connect and self.proxy_address:
       req = self._get_request(connect=True)
-      print req
       self._proxy_sock.sendall(self.mitm_request(req))
 
 
@@ -96,8 +95,6 @@ class ChainedMitmProxyHandler(ProxyHandler):
       
     return req
 
-  def do_CLOSE(self):
-    print "IT WORKED!"
 
   def do_COMMAND(self):
     print self.protocol_version
@@ -125,9 +122,7 @@ class ChainedMitmProxyHandler(ProxyHandler):
 
     # Send it down the pipe!
     req = self.mitm_request(req)
-    print req
     self._proxy_sock.sendall(req)
-    print "sent"
 
 
     # Parse response
@@ -196,7 +191,6 @@ class ChainedMitmProxyHandler(ProxyHandler):
         r, _, _ = select.select([self.request],[],[],0)
         if r:
           print r.recv(2048)
-    print "done"
     self.handle_one_request()
 
 
