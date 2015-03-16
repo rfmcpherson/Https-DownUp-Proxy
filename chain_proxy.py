@@ -34,25 +34,30 @@ class ChainedMitmProxyHandler(ProxyHandler):
     if not self.is_connect:
       self._get_address()
 
+    print "1"
     # Connect to destination
     self._proxy_sock = socket()
     #self._proxy_sock.settimeout(10)
 
+    print "2"
     # connect to next proxy or endpoint
     if self.proxy_address:
       self._proxy_sock.connect(self.proxy_address)
     else:
       self._proxy_sock.connect((self.hostname, self.port))
 
+    print "3"
     # wrap socket in ssl if needed
     if self.is_connect and self.ssl_next:
         self._proxy_sock = wrap_socket(self._proxy_sock, server_side=False)
 
+    print "4"
     # send CONNECT request if chained
     if self.is_connect and self.proxy_address:
       req = self._get_request(connect=True)
+      print req
       self._proxy_sock.sendall(self.mitm_request(req))
-
+    print "5"
 
   # get hostname and port
   # reset self.path as needed
@@ -104,18 +109,20 @@ class ChainedMitmProxyHandler(ProxyHandler):
     close = False
 
     # Is this an SSL tunnel?
-    if not self.is_connect:
-      try:
-        # Connect to destination
-        self._connect_to_host()
-      except Exception, e:
-        self.send_error(500, str(e))
-        return
+    #if not self.is_connect:
+    try:
+      # Connect to destination
+      self._connect_to_host()
+    except Exception, e:
+      self.send_error(500, str(e))
+      return
       # Extract path
 
+    print "build"
     # Build request
     req = self._get_request(connect=False)
-    
+    print "built"
+
     # Check if last request
     #if "Connection" in self.headers and self.headers['Connection'] == "close":
     #  close = True
@@ -123,7 +130,10 @@ class ChainedMitmProxyHandler(ProxyHandler):
     self.headers['Connection'] = "close"
 
     # Send it down the pipe!
-    self._proxy_sock.sendall(self.mitm_request(req))
+    req = self.mitm_request(req)
+    print req
+    self._proxy_sock.sendall(req)
+    print "sent"
 
 
     # Parse response
@@ -169,7 +179,11 @@ class ChainedMitmProxyHandler(ProxyHandler):
     #  self.handle_one_request()
 
   def do_CONNECT(self):
-    self.is_connect = False
+    import select
+
+    print "CONNECT"
+
+    self.is_connect = True
     try:
       # Connect to destination first
       self._get_address()
@@ -180,15 +194,20 @@ class ChainedMitmProxyHandler(ProxyHandler):
         self.send_response(200, 'Connection established')
         self.end_headers()
         self._transition_to_ssl()
+        # Reload!
+        self.setup()
+        self.ssl_host = 'https://%s' % self.path
     except Exception, e:
       self.send_error(500, str(e))
       return
 
-    # Reload!
-    self.setup()
-    self.ssl_host = 'https://%s' % self.path
+    if 0: #not self.ssl_prev:
+      while(1):
+        r, _, _ = select.select([self.request],[],[],0)
+        if r:
+          print r.recv(2048)
+    print "done"
     self.handle_one_request()
-
 
 
 # HTTPS to HTTP
@@ -265,7 +284,7 @@ def _main():
       RequestHandlerClass=ClientMitmProxyHandler, 
       server_address=('localhost',8080))
     proxy.register_interceptor(FirstLineInterceptor)
-    #proxy.register_interceptor(DelayInterceptor)
+    proxy.register_interceptor(DelayInterceptor)
     
   # launch server
   elif argv[1].lower() == "s" or argv[1].lower() == "server":
