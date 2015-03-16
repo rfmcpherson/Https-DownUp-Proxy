@@ -31,7 +31,8 @@ class ChainedMitmProxyHandler(ProxyHandler):
 
   # connect to next proxy or endpoint
   def _connect_to_host(self):
-    self._get_address()
+    if not self.is_connect:
+      self._get_address()
 
     # Connect to destination
     self._proxy_sock = socket()
@@ -98,7 +99,6 @@ class ChainedMitmProxyHandler(ProxyHandler):
     print "IT WORKED!"
 
   def do_COMMAND(self):
-    import select
     print self.protocol_version
 
     close = False
@@ -117,10 +117,10 @@ class ChainedMitmProxyHandler(ProxyHandler):
     req = self._get_request(connect=False)
     
     # Check if last request
-    if "Connection" in self.headers and self.headers['Connection'] == "close":
-      close = True
-      print "client close"
-    #self.headers['Connection'] = "close"
+    #if "Connection" in self.headers and self.headers['Connection'] == "close":
+    #  close = True
+    #  print "client close"
+    self.headers['Connection'] = "close"
 
     # Send it down the pipe!
     self._proxy_sock.sendall(self.mitm_request(req))
@@ -138,10 +138,10 @@ class ChainedMitmProxyHandler(ProxyHandler):
       return
 
     # Check if last response
-    if "Connection" in h.msg and h.msg['Connection'] == "close":
-      close = True
-      print "server close"
-    #h.msg['Connection'] = "close"
+    #if "Connection" in h.msg and h.msg['Connection'] == "close":
+    #  close = True
+    #  print "server close"
+    h.msg['Connection'] = "close"
 
     # Get rid of the pesky header
     del h.msg['Transfer-Encoding']
@@ -155,20 +155,21 @@ class ChainedMitmProxyHandler(ProxyHandler):
     self.request.sendall(self.mitm_response(res))
 
     # Let's close off the remote end
-    if close:
-      print "closing"
-      h.close()
-      self.request.shutdown(SHUT_RDWR)
-      self.request.close()
-      print "closed"
+    #if close:
+    print "closing"
+    h.close()
+    self.request.shutdown(SHUT_RDWR)
+    self.request.close()
+    print "closed"
 
-    if not close:
-      self.handle_one_request()
+    #if not close:
+    #  self.handle_one_request()
 
   def do_CONNECT(self):
     self.is_connect = True
     try:
       # Connect to destination first
+      self._get_address()
       self._connect_to_host()
 
       # If successful, let's do this!
